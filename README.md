@@ -18,8 +18,7 @@ On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
-<details>
-  <summary>Development/Unpublished Servers Configuration</summary>
+Development/Unpublished Servers Configuration
 
 ```
 "mcpServers": {
@@ -40,5 +39,3 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
 }
 ```
-
-</details>
