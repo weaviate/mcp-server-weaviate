@@ -38,10 +38,10 @@ def serve(
     @server.list_tools()
     async def handle_list_tools() -> list[types.Tool]:
         """
-        Return the list of tools that the server provides. By default, there are two
-        tools: one to store memories and another to find them. Finding the memories is not
-        implemented as a resource, as it requires a query to be passed and resources point
-        to a very specific piece of data.
+        Return the list of tools that the server provides. By default, there are three
+        tools: one to store memories, another to find them, and one to search the knowledge base.
+        Finding the memories is not implemented as a resource, as it requires a query to be 
+        passed and resources point to a very specific piece of data.
         """
         return [
             types.Tool(
@@ -78,13 +78,32 @@ def serve(
                     "required": ["query"],
                 },
             ),
+            types.Tool(
+                name="weaviate-search-knowledge",
+                description=(
+                    "Search the knowledge base in Weaviate. Use this tool when you need to: \n"
+                    " - Find relevant information from the knowledge base \n"
+                    " - Access structured knowledge \n"
+                    " - Get factual information"
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The query to search for in the knowledge base",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            ),
         ]
 
     @server.call_tool()
     async def handle_tool_call(
         name: str, arguments: dict | None
     ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
-        if name not in ["weaviate-store-memory", "weaviate-find-memories"]:
+        if name not in ["weaviate-store-memory", "weaviate-find-memories", "weaviate-search-knowledge"]:
             raise ValueError(f"Unknown tool: {name}")
 
         if name == "weaviate-store-memory":
@@ -107,6 +126,22 @@ def serve(
             for memory in memories:
                 content.append(
                     types.TextContent(type="text", text=f"<memory>{memory}</memory>")
+                )
+            return content
+
+        if name == "weaviate-search-knowledge":
+            if not arguments or "query" not in arguments:
+                raise ValueError("Missing required argument 'query'")
+            query = arguments["query"]
+            results = await weaviate.search_knowledge_base(query)
+            content = [
+                types.TextContent(
+                    type="text", text=f"Knowledge base results for the query '{query}'"
+                ),
+            ]
+            for result in results:
+                content.append(
+                    types.TextContent(type="text", text=f"<result>{result}</result>")
                 )
             return content
 
