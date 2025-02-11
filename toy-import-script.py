@@ -1,1 +1,0 @@
-# Toy Weaviate import for demo / quick testing sake
