@@ -23,13 +23,19 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 ```
 "mcpServers": {
-  "mcp-server-docker": {
+  "weaviate": {
     "command": "uv",
     "args": [
       "--directory",
-      "/path/to/repo",
+      "parent_of_servers_repo/servers/src/weaviate",
       "run",
-      "mcp-server-docker"
+      "mcp-server-weaviate",
+      "--weaviate-url",
+      "https://your-weaviate-instance.weaviate.network",
+      "--api-key",
+      "your_weaviate_api_key",
+      "--openai-api-key",
+      "your_openai_api_key"
     ]
   }
 }
