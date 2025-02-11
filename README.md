@@ -1,7 +1,7 @@
 # mcp-server-weaviate
 MCP server for Weaviate
 
-## 🏎️ Quickstartå
+## 🏎️ Quickstart
 
 ### Prerequisites
 
