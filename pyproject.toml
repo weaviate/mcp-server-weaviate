@@ -1,0 +1,9 @@
+[project]
+name = "mcp-server-weaviate"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "weaviate-client==4.10.4",
+]
