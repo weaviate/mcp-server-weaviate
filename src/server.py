@@ -1,106 +1,187 @@
-import asyncio
-import json
-import logging
-from typing import Any, Dict
+from typing import Optional
 
-import weaviate
+from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
+
+import click
 import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
-from pydantic import BaseModel, ValidationError
+import asyncio
+import mcp
 
-logger = logging.getLogger("mcp_weaviate")
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
+from .weaviate import WeaviateConnector
 
 
-class QueryWeaviateInput(BaseModel):
-    target_collection: str
-    search_query: str
-    limit: int = 5
-    return_properties: list[str] | None = None
+def serve(
+    weaviate_url: Optional[str],
+    weaviate_api_key: Optional[str], 
+    search_collection_name: str,
+    store_collection_name: str,
+    cohere_api_key: Optional[str] = None,
+    openai_api_key: Optional[str] = None,
+) -> Server:
+    """
+    Instantiate the server and configure tools to store and find memories in Weaviate.
+    :param weaviate_url: The URL of the Weaviate server.
+    :param weaviate_api_key: The API key to use for the Weaviate server.
+    :param search_collection_name: The name of the collection to search from.
+    :param store_collection_name: The name of the collection to store memories in.
+    :param cohere_api_key: Optional API key to use Cohere embeddings.
+    :param openai_api_key: Optional API key to use OpenAI embeddings.
+    """
+    server = Server("weaviate")
 
-
-def _format_query_result(result: Any) -> str:
-    """Format query results into a readable string."""
-    if hasattr(result, "objects"):
-        formatted = "Found objects:\n"
-        for obj in result.objects:
-            formatted += "-" * 40 + "\n"
-            for key, value in obj.properties.items():
-                formatted += f"{key}: {value}\n"
-        if hasattr(result, "total_count"):
-            formatted += f"\nTotal matching results: {result.total_count}\n"
-        return formatted
-    return str(result)
-
-
-async def main(weaviate_url: str, weaviate_api_key: str, openai_api_key: str):
-    logger.info(f"Connecting to Weaviate at {weaviate_url}...")
-    weaviate_client = weaviate.connect_to_weaviate_cloud(
-        cluster_url=weaviate_url,
-        auth_credentials=weaviate.auth.AuthApiKey(weaviate_api_key),
-        headers={"X-OpenAI-Api-Key": openai_api_key},
+    weaviate = WeaviateConnector(
+        weaviate_url, weaviate_api_key, search_collection_name, store_collection_name,
+        cohere_api_key=cohere_api_key, openai_api_key=openai_api_key
     )
-    logger.info("Connected to Weaviate.")
-
-    server = Server("weaviate-manager")
 
     @server.list_tools()
     async def handle_list_tools() -> list[types.Tool]:
-        """List available tools."""
+        """
+        Return the list of tools that the server provides. By default, there are two
+        tools: one to store memories and another to find them. Finding the memories is not
+        implemented as a resource, as it requires a query to be passed and resources point
+        to a very specific piece of data.
+        """
         return [
             types.Tool(
-                name="search-weaviate",
-                description="Execute a hybrid search query against a Weaviate vector database.",
-                inputSchema=QueryWeaviateInput.model_json_schema(),
-            )
+                name="weaviate-store-memory",
+                description=(
+                    "Keep the memory for later use, when you are asked to remember something."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "information": {
+                            "type": "string",
+                        },
+                    },
+                    "required": ["information"],
+                },
+            ),
+            types.Tool(
+                name="weaviate-find-memories",
+                description=(
+                    "Look up memories in Weaviate. Use this tool when you need to: \n"
+                    " - Find memories by their content \n"
+                    " - Access memories for further analysis \n"
+                    " - Get some personal information about the user"
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The query to search for in the memories",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            ),
         ]
 
     @server.call_tool()
-    async def handle_call_tool(
-        name: str, arguments: Dict[str, Any] | None
-    ) -> list[types.TextContent]:
-        """Handle tool execution requests."""
-        try:
-            if name == "search-weaviate":
-                if arguments is None:
-                    arguments = {}
-                args = QueryWeaviateInput.model_validate(arguments)
-                logger.debug(
-                    f"Executing search on collection '{args.target_collection}' with query '{args.search_query}'"
-                )
-                collection = weaviate_client.collections.get(args.target_collection)
-                result = collection.query.hybrid(
-                    query=args.search_query,
-                    limit=args.limit,
-                    return_properties=args.return_properties,
-                )
-                formatted_result = _format_query_result(result)
-                response_json = json.dumps({"result": formatted_result}, indent=2)
-                return [types.TextContent(type="text", text=response_json)]
-            else:
-                return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
-        except ValidationError as ve:
-            logger.error(f"Validation error: {ve}")
-            return [types.TextContent(type="text", text=f"ERROR: {ve}")]
-        except Exception as e:
-            logger.error(f"Error executing tool '{name}': {e}")
-            return [types.TextContent(type="text", text=f"Error: {str(e)}")]
+    async def handle_tool_call(
+        name: str, arguments: dict | None
+    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+        if name not in ["weaviate-store-memory", "weaviate-find-memories"]:
+            raise ValueError(f"Unknown tool: {name}")
 
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        logger.info("Weaviate MCP server running with stdio transport")
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="weaviate-manager",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
+        if name == "weaviate-store-memory":
+            if not arguments or "information" not in arguments:
+                raise ValueError("Missing required argument 'information'")
+            information = arguments["information"]
+            await weaviate.store_memory(information)
+            return [types.TextContent(type="text", text=f"Remembered: {information}")]
+
+        if name == "weaviate-find-memories":
+            if not arguments or "query" not in arguments:
+                raise ValueError("Missing required argument 'query'")
+            query = arguments["query"]
+            memories = await weaviate.find_memories(query)
+            content = [
+                types.TextContent(
+                    type="text", text=f"Memories for the query '{query}'"
                 ),
-            ),
-        )
+            ]
+            for memory in memories:
+                content.append(
+                    types.TextContent(type="text", text=f"<memory>{memory}</memory>")
+                )
+            return content
+
+    return server
+
+
+@click.command()
+@click.option(
+    "--weaviate-url",
+    envvar="WEAVIATE_URL",
+    required=False,
+    help="Weaviate URL",
+)
+@click.option(
+    "--weaviate-api-key",
+    envvar="WEAVIATE_API_KEY", 
+    required=False,
+    help="Weaviate API key",
+)
+@click.option(
+    "--search-collection-name",
+    envvar="SEARCH_COLLECTION_NAME",
+    required=True,
+    help="Name of collection to search from",
+)
+@click.option(
+    "--store-collection-name",
+    envvar="STORE_COLLECTION_NAME",
+    required=True,
+    help="Name of collection to store memories in",
+)
+@click.option(
+    "--cohere-api-key",
+    envvar="COHERE_API_KEY",
+    required=False,
+    help="Cohere API key for embeddings",
+)
+@click.option(
+    "--openai-api-key",
+    envvar="OPENAI_API_KEY",
+    required=False,
+    help="OpenAI API key for embeddings",
+)
+def main(
+    weaviate_url: Optional[str],
+    weaviate_api_key: Optional[str],
+    search_collection_name: str,
+    store_collection_name: str,
+    cohere_api_key: Optional[str],
+    openai_api_key: Optional[str],
+):
+    if not (cohere_api_key or openai_api_key):
+        raise ValueError("Either a Cohere or OpenAI API key must be provided")
+
+    async def _run():
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            server = serve(
+                weaviate_url,
+                weaviate_api_key,
+                search_collection_name,
+                store_collection_name,
+                cohere_api_key,
+                openai_api_key,
+            )
+            await server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="weaviate",
+                    server_version="0.5.1",
+                    capabilities=server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
+                ),
+            )
+
+    asyncio.run(_run())

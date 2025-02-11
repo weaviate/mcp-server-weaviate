@@ -43,36 +43,69 @@ class WeaviateConnector:
             headers=headers
         )
 
+        # Store collections as instance variables
+        self._search_collection = self._client.collections.get(search_collection_name)
+        self._store_collection = self._client.collections.get(store_collection_name)
+
     async def store_memory(self, information: str):
         """
         Store a memory in the Weaviate store collection.
         :param information: The information to store.
         """
-        self._client.data.insert(
-            collection_name=self._store_collection_name,
+        self._store_collection.data.insert(
             properties={
                 "content": information
             }
         )
 
+    def _format_query_result(self, result: Any) -> str:
+        """Format query results into a readable string."""
+        if hasattr(result, "objects"):
+            formatted = "Found objects:\n"
+            for obj in result.objects:
+                formatted += "-" * 40 + "\n"
+                for key, value in obj.properties.items():
+                    formatted += f"{key}: {value}\n"
+            if hasattr(result, "total_count"):
+                formatted += f"\nTotal matching results: {result.total_count}\n"
+            return formatted
+
     async def find_memories(self, query: str) -> list[str]:
         """
-        Find memories in the Weaviate search collection. If there are no memories found, an empty list is returned.
+        Find memories in the Weaviate store collection. If there are no memories found, an empty list is returned.
         :param query: The query to use for the search.
         :return: A list of memories found.
         """
         try:
-            result = (
-                self._client.query
-                .get(self._search_collection_name, ["content"])
-                .with_near_text({"concepts": [query]})
-                .with_limit(10)
-                .do()
+            result = self._store_collection.query.hybrid(
+                query=query,
+                limit=10
             )
             
-            if result and "data" in result:
-                objects = result["data"]["Get"][self._search_collection_name]
-                return [obj["content"] for obj in objects]
+            formatted_result = self._format_query_result(result)
+            if formatted_result:
+                return [obj.properties["content"] for obj in result.objects]
+            return []
+            
+        except Exception:
+            # Return empty list if collection doesn't exist or other errors
+            return []
+
+    async def search_knowledge_base(self, query: str) -> list[str]:
+        """
+        Search the knowledge base in the Weaviate search collection. If there are no results found, an empty list is returned.
+        :param query: The query to use for the search.
+        :return: A list of relevant knowledge base entries found.
+        """
+        try:
+            result = self._search_collection.query.hybrid(
+                query=query,
+                limit=10
+            )
+            
+            formatted_result = self._format_query_result(result)
+            if formatted_result:
+                return [obj.properties["content"] for obj in result.objects]
             return []
             
         except Exception:
