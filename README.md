@@ -33,8 +33,16 @@ Development/Unpublished Servers Configuration
       "https://your-weaviate-instance.weaviate.network",
       "--api-key",
       "your_weaviate_api_key",
+      "--memory-collection-name",
+      "AnthropicMemories",
+      "--knowledge-base-collection-name",
+      "KnowledgeBase",
+      # Optional: OpenAI API key for embeddings
       "--openai-api-key",
-      "your_openai_api_key"
+      "your_openai_api_key",
+      # Optional: Cohere API key for embeddings
+      "--cohere-api-key", 
+      "your_cohere_api_key"
     ]
   }
 }
