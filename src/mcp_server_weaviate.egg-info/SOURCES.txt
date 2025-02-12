@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/server.py
+src/settings.py
+src/weaviate.py
+src/mcp_server_weaviate.egg-info/PKG-INFO
+src/mcp_server_weaviate.egg-info/SOURCES.txt
+src/mcp_server_weaviate.egg-info/dependency_links.txt
+src/mcp_server_weaviate.egg-info/requires.txt
+src/mcp_server_weaviate.egg-info/top_level.txt
