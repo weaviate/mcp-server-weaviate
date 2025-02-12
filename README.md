@@ -1,4 +1,6 @@
 # mcp-server-weaviate
+[![smithery badge](https://smithery.ai/badge/@weaviate/mcp-server-weaviate)](https://smithery.ai/server/@weaviate/mcp-server-weaviate)
+
 MCP server for Weaviate
 
 ## 🏎️ Quickstart
@@ -11,6 +13,14 @@ MCP server for Weaviate
 - Clone this repository
 
 ### Install
+
+#### Installing via Smithery
+
+To install Weaviate MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@weaviate/mcp-server-weaviate):
+
+```bash
+npx -y @smithery/cli install @weaviate/mcp-server-weaviate --client claude
+```
 
 #### Claude Desktop
 
