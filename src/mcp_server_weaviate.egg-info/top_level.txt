@@ -1,0 +1,3 @@
+server
+settings
+weaviate

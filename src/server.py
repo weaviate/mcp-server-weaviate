@@ -10,6 +10,17 @@ import mcp
 
 from .weaviate import WeaviateConnector
 
+import logging
+import sys
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stderr
+)
+logger = logging.getLogger(__name__)
+
 
 def serve(
     weaviate_url: Optional[str],
@@ -197,6 +208,8 @@ def main(
         raise ValueError("Either a Cohere or OpenAI API key must be provided")
 
     async def _run():
+        logger.debug("Starting server...")
+
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             server = serve(
                 weaviate_url,
@@ -220,3 +233,7 @@ def main(
             )
 
     asyncio.run(_run())
+
+if __name__ == "__main__":
+    print("Running main...", flush=True)
+    main()

@@ -1,0 +1,58 @@
+Metadata-Version: 2.2
+Name: mcp-server-weaviate
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: weaviate-client==4.10.4
+
+# mcp-server-weaviate
+MCP server for Weaviate
+
+## 🏎️ Quickstart
+
+### Prerequisites
+
+- Ensure you have `uv` installed (see
+  [the docs](https://docs.astral.sh/uv/getting-started/installation/) for
+  details)
+- Clone this repository
+
+### Install
+
+#### Claude Desktop
+
+On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+
+On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+
+Development/Unpublished Servers Configuration
+
+```
+"mcpServers": {
+  "weaviate": {
+    "command": "uv",
+    "args": [
+      "--directory",
+      "parent_of_servers_repo/servers/src/weaviate",
+      "run",
+      "mcp-server-weaviate",
+      "--weaviate-url",
+      "https://6duidsbkrmqiw2cjudvha.c0.us-east1.gcp.weaviate.cloud",
+      "--api-key",
+      "6Nnrr44gxpxVvSPbf4ZSMCtHohl9C5t5Wxr0",
+      "--memory-collection-name",
+      "AnthropicMemories",
+      "--knowledge-base-collection-name",
+      "KnowledgeBase",
+      # Optional: OpenAI API key for embeddings
+      "--openai-api-key",
+      "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",
+      # Optional: Cohere API key for embeddings
+      "--cohere-api-key", 
+      "your_cohere_api_key"
+    ]
+  }
+}
+```
