@@ -1,0 +1,33 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - searchCollectionName
+      - storeCollectionName
+    properties:
+      weaviateUrl:
+        type: string
+        description: The URL of the Weaviate server.
+      weaviateApiKey:
+        type: string
+        description: The API key for the Weaviate server.
+      searchCollectionName:
+        type: string
+        description: Name of the collection to search from.
+      storeCollectionName:
+        type: string
+        description: Name of the collection to store memories in.
+      cohereApiKey:
+        type: string
+        description: Cohere API key for embeddings (optional).
+      openaiApiKey:
+        type: string
+        description: OpenAI API key for embeddings (optional).
+  commandFunction:
+    # A function that produces the CLI command to start the MCP on stdio.
+    |-
+    config => ({command: 'python', args: ['-m', 'src.server', '--weaviate-url', config.weaviateUrl, '--weaviate-api-key', config.weaviateApiKey, '--search-collection-name', config.searchCollectionName, '--store-collection-name', config.storeCollectionName, '--cohere-api-key', config.cohereApiKey, '--openai-api-key', config.openaiApiKey]})
