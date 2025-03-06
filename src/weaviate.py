@@ -1,6 +1,7 @@
 from typing import Optional, Any
 import weaviate
 from weaviate.auth import Auth
+from weaviate_agents.query import QueryAgent
 
 
 class WeaviateConnector:
@@ -29,7 +30,15 @@ class WeaviateConnector:
         self._weaviate_url = weaviate_url.rstrip("/") if weaviate_url else None
         self._weaviate_api_key = weaviate_api_key
         self._search_collection_name = search_collection_name
+        self._knowledge_base_query_agent = QueryAgent(
+            client=weaviate_client,
+            collections=self._search_collection_name
+        )
         self._store_collection_name = store_collection_name
+        self._memories_query_agent = QueryAgent(
+            client=weaviate_client,
+            collections=[self._search_collection_name, self._store_collection_name]
+        )
 
         headers = {}
         if cohere_api_key:
@@ -77,15 +86,7 @@ class WeaviateConnector:
         :return: A list of memories found.
         """
         try:
-            result = self._store_collection.query.hybrid(
-                query=query,
-                limit=10
-            )
-            
-            formatted_result = self._format_query_result(result)
-            if formatted_result:
-                return [obj.properties["content"] for obj in result.objects]
-            return []
+            result = self._memories_query_agent.run(query).final_answer
             
         except Exception:
             # Return empty list if collection doesn't exist or other errors
@@ -98,15 +99,7 @@ class WeaviateConnector:
         :return: A list of relevant knowledge base entries found.
         """
         try:
-            result = self._search_collection.query.hybrid(
-                query=query,
-                limit=10
-            )
-            
-            formatted_result = self._format_query_result(result)
-            if formatted_result:
-                return [obj.properties["content"] for obj in result.objects]
-            return []
+            result = self._knowledge_base_query_agent.run(query).final_answer
             
         except Exception:
             # Return empty list if collection doesn't exist or other errors
