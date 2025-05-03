@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/weaviate-mcp-server-weaviate-badge.png)](https://mseep.ai/app/weaviate-mcp-server-weaviate)
+
 # mcp-server-weaviate
 [![smithery badge](https://smithery.ai/badge/@weaviate/mcp-server-weaviate)](https://smithery.ai/server/@weaviate/mcp-server-weaviate)
 
