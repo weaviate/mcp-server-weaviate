@@ -1,4 +1,5 @@
 # Weaviate MCP Server
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/weaviate/mcp-server-weaviate)](https://archestra.ai/mcp-catalog/weaviate__mcp-server-weaviate)
 
 ## Instructions
 
