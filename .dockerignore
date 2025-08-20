@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+CLAUDE.md
+
+# Environment files (keep .env.example)
+.env
+
+# Build artifacts
+mcpviate
+client/mcp-server
+
+# Go build cache
+.cache
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
