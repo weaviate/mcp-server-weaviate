@@ -175,7 +175,8 @@ Perform hybrid search queries with optional filtering support.
 **Parameters:**
 - `collection` (string, required) - Target collection name
 - `query` (string, required) - Search query text
-- `limit` (number, optional) - Maximum results to return (default: 10)
+- `limit` (number, optional) - Maximum results to return
+- `offset` (number, optional) - Number of results to skip for pagination
 - `where` (object, optional) - Filter conditions
 
 **Example Basic Query:**
@@ -208,6 +209,16 @@ Perform hybrid search queries with optional filtering support.
       }
     ]
   }
+}
+```
+
+**Example with Pagination:**
+```json
+{
+  "collection": "WorldMap",
+  "query": "cities",
+  "limit": 10,
+  "offset": 20
 }
 ```
 

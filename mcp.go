@@ -119,6 +119,14 @@ func (s *MCPServer) registerTools() {
 			"where",
 			mcp.Description("Optional filter conditions. Structure: {operator: 'Equal|NotEqual|LessThan|LessThanEqual|GreaterThan|GreaterThanEqual|Like|And|Or', path: ['propertyName'], valueText: 'string', valueInt: 123, valueNumber: 1.23, valueBoolean: true, valueDate: '2023-01-01T00:00:00Z', operands: [...]}"),
 		),
+		mcp.WithNumber(
+			"limit",
+			mcp.Description("Maximum number of results to return"),
+		),
+		mcp.WithNumber(
+			"offset",
+			mcp.Description("Number of results to skip"),
+		),
 	)
 
 	s.server.AddTools(
@@ -161,7 +169,22 @@ func (s *MCPServer) weaviateQuery(ctx context.Context, req mcp.CallToolRequest) 
 		}
 	}
 
-	res, err := s.weaviateConn.Query(context.Background(), targetCol, query, targetProps, whereFilter)
+	// Parse optional limit and offset
+	var limit, offset *int
+	if limitVal, ok := req.Params.Arguments["limit"]; ok {
+		if limitFloat, ok := limitVal.(float64); ok {
+			limitInt := int(limitFloat)
+			limit = &limitInt
+		}
+	}
+	if offsetVal, ok := req.Params.Arguments["offset"]; ok {
+		if offsetFloat, ok := offsetVal.(float64); ok {
+			offsetInt := int(offsetFloat)
+			offset = &offsetInt
+		}
+	}
+
+	res, err := s.weaviateConn.Query(context.Background(), targetCol, query, targetProps, whereFilter, limit, offset)
 	if err != nil {
 		return mcp.NewToolResultErrorFromErr("failed to process query", err), nil
 	}

@@ -64,7 +64,7 @@ func (conn *WeaviateConnection) InsertOne(ctx context.Context,
 }
 
 func (conn *WeaviateConnection) Query(ctx context.Context, collection,
-	query string, targetProps []string, whereFilter map[string]interface{},
+	query string, targetProps []string, whereFilter map[string]interface{}, limit *int, offset *int,
 ) (string, error) {
 	hybrid := graphql.HybridArgumentBuilder{}
 	hybrid.WithQuery(query)
@@ -86,6 +86,16 @@ func (conn *WeaviateConnection) Query(ctx context.Context, collection,
 			return "", fmt.Errorf("build where filter: %w", err)
 		}
 		queryBuilder = queryBuilder.WithWhere(filter)
+	}
+	
+	// Add limit if provided
+	if limit != nil {
+		queryBuilder = queryBuilder.WithLimit(*limit)
+	}
+	
+	// Add offset if provided
+	if offset != nil {
+		queryBuilder = queryBuilder.WithOffset(*offset)
 	}
 	
 	res, err := queryBuilder.Do(context.Background())

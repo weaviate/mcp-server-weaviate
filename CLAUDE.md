@@ -35,7 +35,7 @@ This is a Weaviate MCP (Model Context Protocol) server implementation that provi
 
 **MCP Tools Provided:**
 1. `weaviate-insert-one` - Insert objects into Weaviate collections with auto-schema
-2. `weaviate-query` - Hybrid search queries across collections with optional filtering support
+2. `weaviate-query` - Hybrid search queries across collections with optional filtering, pagination support
 
 ## Configuration
 
@@ -95,3 +95,15 @@ The `weaviate-query` tool now supports optional filtering via the `where` parame
 - Simple equality: `{"operator": "Equal", "path": ["continent"], "valueText": "Europe"}`
 - Range filter: `{"operator": "GreaterThan", "path": ["population"], "valueInt": 1000000}`
 - Complex AND: `{"operator": "And", "operands": [filter1, filter2]}`
+
+## Pagination Support
+
+The `weaviate-query` tool supports pagination through optional `limit` and `offset` parameters:
+
+- **`limit`** (number, optional) - Maximum number of results to return
+- **`offset`** (number, optional) - Number of results to skip
+
+**Examples:**
+- Get first 10 results: `{"limit": 10}`
+- Get results 11-20: `{"limit": 10, "offset": 10}`
+- Get all results starting from the 50th: `{"offset": 50}`
