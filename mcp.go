@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -28,8 +29,7 @@ func NewMCPServer() (*MCPServer, error) {
 			server.WithRecovery(),
 		),
 		weaviateConn: conn,
-		// TODO: configurable collection name
-		defaultCollection: "DefaultCollection",
+		defaultCollection: getEnvWithDefault("WEAVIATE_DEFAULT_COLLECTION", "DefaultCollection"),
 	}
 	s.registerTools()
 	return s, nil
@@ -63,6 +63,10 @@ func (s *MCPServer) registerTools() {
 			"targetProperties",
 			mcp.Description("Properties to return with the query"),
 			mcp.Required(),
+		),
+		mcp.WithObject(
+			"where",
+			mcp.Description("Optional filter conditions. Structure: {operator: 'Equal|NotEqual|LessThan|LessThanEqual|GreaterThan|GreaterThanEqual|Like|And|Or', path: ['propertyName'], valueText: 'string', valueInt: 123, valueNumber: 1.23, valueBoolean: true, valueDate: '2023-01-01T00:00:00Z', operands: [...]}"),
 		),
 	)
 
@@ -98,7 +102,15 @@ func (s *MCPServer) weaviateQuery(ctx context.Context, req mcp.CallToolRequest) 
 			targetProps = append(targetProps, typed)
 		}
 	}
-	res, err := s.weaviateConn.Query(context.Background(), targetCol, query, targetProps)
+	// Parse optional filter
+	var whereFilter map[string]interface{}
+	if filter, ok := req.Params.Arguments["where"]; ok {
+		if filterMap, ok := filter.(map[string]interface{}); ok {
+			whereFilter = filterMap
+		}
+	}
+
+	res, err := s.weaviateConn.Query(context.Background(), targetCol, query, targetProps, whereFilter)
 	if err != nil {
 		return mcp.NewToolResultErrorFromErr("failed to process query", err), nil
 	}
@@ -114,4 +126,11 @@ func (s *MCPServer) parseTargetCollection(req mcp.CallToolRequest) string {
 		targetCol = col
 	}
 	return targetCol
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

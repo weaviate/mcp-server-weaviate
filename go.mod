@@ -3,9 +3,10 @@ module github.com/weaviate/mcpviate
 go 1.23.1
 
 require (
+	github.com/joho/godotenv v1.5.1
 	github.com/mark3labs/mcp-go v0.28.0
+	github.com/weaviate/weaviate v1.27.0
 	github.com/weaviate/weaviate-go-client/v4 v4.16.1
-	golang.org/x/net v0.40.0
 )
 
 require (
@@ -26,9 +27,9 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/weaviate/weaviate v1.27.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect

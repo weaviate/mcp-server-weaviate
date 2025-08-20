@@ -33,6 +33,13 @@ func main() {
 		}
 		log.Printf("query response: %+v", queryRes)
 	}
+	{
+		filteredQueryRes, err := filteredQueryRequest(ctx, c)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("filtered query response: %+v", filteredQueryRes)
+	}
 }
 
 func newMCPClient(ctx context.Context, cmd string) (*client.Client, error) {
@@ -82,6 +89,27 @@ func queryRequest(ctx context.Context, c *client.Client) (*mcp.CallToolResult, e
 	res, err := c.CallTool(ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call query tool: %v", err)
+	}
+	return res, nil
+}
+
+func filteredQueryRequest(ctx context.Context, c *client.Client) (*mcp.CallToolResult, error) {
+	request := mcp.CallToolRequest{}
+	request.Params.Name = "weaviate-query"
+	request.Params.Arguments = map[string]interface{}{
+		"collection":       "WorldMap",
+		"query":            "European cities",
+		"targetProperties": []string{"continent", "country", "city"},
+		"where": map[string]interface{}{
+			"operator":  "Equal",
+			"path":      []string{"continent"},
+			"valueText": "Europe",
+		},
+	}
+	log.Printf("filtered query request: %+v", request)
+	res, err := c.CallTool(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call filtered query tool: %v", err)
 	}
 	return res, nil
 }

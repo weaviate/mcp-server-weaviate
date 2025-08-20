@@ -2,10 +2,16 @@ package main
 
 import (
 	"log"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// TODO: get all WeaviateConn config from env
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("Warning: .env file not found or could not be loaded: %v", err)
+	}
+	
 	// TODO: support SSEs
 	// var transport string
 	// flag.StringVar(&transport, "transport", "stdio", "Specifies the transport protocol. One of [stdio|sse]")
