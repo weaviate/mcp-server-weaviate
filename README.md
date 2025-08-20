@@ -51,6 +51,8 @@ make run-client
 
 The server is configured via environment variables loaded from a `.env` file:
 
+### Weaviate Configuration
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `WEAVIATE_HOST` | Weaviate server host | `localhost:8080` |
@@ -59,16 +61,42 @@ The server is configured via environment variables loaded from a `.env` file:
 | `WEAVIATE_STARTUP_TIMEOUT` | Connection timeout in seconds | `30` |
 | `WEAVIATE_DEFAULT_COLLECTION` | Default collection name | `DefaultCollection` |
 
+### MCP Transport Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_TRANSPORT` | MCP transport protocol | `stdio` |
+| `MCP_PORT` | Port for SSE transport | `8080` |
+| `MCP_APIKEY` | API key for SSE authentication | (optional) |
+
+**Transport Options:**
+- `stdio` - Standard input/output (default, for CLI integration)
+- `sse` - Server-Sent Events over HTTP (for web integration)
+
+**API Key Authentication:**
+When using SSE transport with `MCP_APIKEY` set, clients must include the API key in the Authorization header:
+```
+Authorization: Bearer your-secret-api-key-here
+```
+
 ### Example .env file:
 ```bash
+# Weaviate Configuration
 WEAVIATE_HOST=localhost:8080
 WEAVIATE_SCHEME=http
 WEAVIATE_API_KEY=your-api-key-here
 WEAVIATE_STARTUP_TIMEOUT=30
 WEAVIATE_DEFAULT_COLLECTION=MyData
+
+# MCP Transport Configuration
+MCP_TRANSPORT=stdio
+MCP_PORT=8080
+MCP_APIKEY=your-secret-api-key-here
 ```
 
-## Claude Desktop Integration
+## Client Integration
+
+### Claude Desktop Integration (stdio transport)
 
 To use this MCP server with Claude Desktop, add the following configuration to your Claude Desktop settings:
 
@@ -76,24 +104,37 @@ To use this MCP server with Claude Desktop, add the following configuration to y
 {
   "mcpServers": {
     "weaviate": {
-      "command": "/Users/jmcnally/projects/mcp/mcp-server-weaviate/client/mcp-server",
+      "command": "/path/to/mcp-server-weaviate/client/mcp-server",
       "env": {
         "WEAVIATE_HOST": "localhost:8080",
         "WEAVIATE_SCHEME": "http",
         "WEAVIATE_STARTUP_TIMEOUT": "5",
-        "WEAVIATE_API_KEY": "ABC",
-        "WEAVIATE_DEFAULT_COLLECTION": "AcademicContent"
+        "WEAVIATE_API_KEY": "your-weaviate-api-key",
+        "WEAVIATE_DEFAULT_COLLECTION": "AcademicContent",
+        "MCP_TRANSPORT": "stdio"
       }
     }
   }
 }
 ```
 
+### Web Integration (SSE transport)
+
+For web applications or HTTP-based clients, use SSE transport:
+
+```bash
+# Start the server with SSE transport
+MCP_TRANSPORT=sse MCP_PORT=8080 MCP_APIKEY=secret-key ./client/mcp-server
+```
+
+Then connect to `http://localhost:8080` with the required Authorization header.
+
 **Configuration Notes:**
 - Update the `command` path to match your actual binary location
 - Adjust environment variables to match your Weaviate setup
-- The `WEAVIATE_API_KEY` should be set to your actual API key for remote instances
-- Use `WEAVIATE_SCHEME: "https"` for secure connections
+- The `WEAVIATE_API_KEY` should be set to your actual Weaviate API key for remote instances
+- Use `WEAVIATE_SCHEME: "https"` for secure Weaviate connections
+- Set `MCP_APIKEY` only for SSE transport to enable authentication
 
 ## MCP Tools
 

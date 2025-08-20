@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -12,13 +13,25 @@ func main() {
 		log.Printf("Warning: .env file not found or could not be loaded: %v", err)
 	}
 	
-	// TODO: support SSEs
-	// var transport string
-	// flag.StringVar(&transport, "transport", "stdio", "Specifies the transport protocol. One of [stdio|sse]")
+	transport := getEnvWithDefault("MCP_TRANSPORT", "stdio")
 	s, err := NewMCPServer()
 	if err != nil {
 		log.Fatalf("failed to start mcp server: %v", err)
 	}
-	_ = s
-	s.Serve()
+	
+	switch transport {
+	case "sse":
+		s.ServeSSE()
+	case "stdio":
+		s.ServeStdio()
+	default:
+		log.Fatalf("unsupported transport: %s. Supported transports: [stdio, sse]", transport)
+	}
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

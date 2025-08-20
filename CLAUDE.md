@@ -40,11 +40,23 @@ This is a Weaviate MCP (Model Context Protocol) server implementation that provi
 ## Configuration
 
 Environment variables are loaded from `.env` file (copy from `.env.example`):
+
+**Weaviate Configuration:**
 - `WEAVIATE_HOST` - Weaviate server host (default: localhost:8080)
 - `WEAVIATE_SCHEME` - Connection scheme (default: http)
 - `WEAVIATE_API_KEY` - Authentication key (optional for local dev)
 - `WEAVIATE_STARTUP_TIMEOUT` - Connection timeout in seconds
 - `WEAVIATE_DEFAULT_COLLECTION` - Default collection name
+
+**MCP Transport Configuration:**
+- `MCP_TRANSPORT` - MCP transport protocol (default: stdio, options: stdio|sse)
+- `MCP_PORT` - Port for SSE transport (default: 8080, only used when MCP_TRANSPORT=sse)
+- `MCP_APIKEY` - API key for SSE transport authentication (optional, only used when MCP_TRANSPORT=sse)
+
+When using SSE transport with `MCP_APIKEY` set, clients must include the API key in the Authorization header:
+```
+Authorization: Bearer your-secret-api-key-here
+```
 
 ## Code Structure
 

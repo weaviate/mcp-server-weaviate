@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
-	"os"
+	"log"
+	"net/http"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -35,8 +37,57 @@ func NewMCPServer() (*MCPServer, error) {
 	return s, nil
 }
 
-func (s *MCPServer) Serve() {
+func (s *MCPServer) ServeStdio() {
 	server.ServeStdio(s.server)
+}
+
+func (s *MCPServer) ServeSSE() {
+	sseServer := server.NewSSEServer(s.server)
+	
+	// Get configuration from environment variables
+	port := getEnvWithDefault("MCP_PORT", "8080")
+	apiKey := getEnvWithDefault("MCP_APIKEY", "")
+	addr := ":" + port
+	
+	// Set up handler with optional API key middleware
+	var handler http.Handler = sseServer
+	if apiKey != "" {
+		handler = s.apiKeyMiddleware(apiKey, sseServer)
+		log.Printf("Starting MCP SSE server on port %s with API key authentication", port)
+	} else {
+		log.Printf("Starting MCP SSE server on port %s without authentication", port)
+	}
+	
+	if err := http.ListenAndServe(addr, handler); err != nil {
+		log.Fatalf("failed to start SSE server: %v", err)
+	}
+}
+
+func (s *MCPServer) apiKeyMiddleware(expectedAPIKey string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check for API key in Authorization header (Bearer token)
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			return
+		}
+		
+		// Extract Bearer token
+		const bearerPrefix = "Bearer "
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
+			http.Error(w, "Invalid Authorization header format. Expected: Bearer <token>", http.StatusUnauthorized)
+			return
+		}
+		
+		apiKey := strings.TrimPrefix(authHeader, bearerPrefix)
+		if apiKey != expectedAPIKey {
+			http.Error(w, "Invalid API key", http.StatusUnauthorized)
+			return
+		}
+		
+		// API key is valid, proceed with the request
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *MCPServer) registerTools() {
@@ -128,9 +179,3 @@ func (s *MCPServer) parseTargetCollection(req mcp.CallToolRequest) string {
 	return targetCol
 }
 
-func getEnvWithDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
