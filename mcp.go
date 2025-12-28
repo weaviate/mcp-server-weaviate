@@ -42,6 +42,9 @@ func (s *MCPServer) Serve() {
 func (s *MCPServer) registerTools() {
 	insertOne := mcp.NewTool(
 		"weaviate-insert-one",
+		mcp.WithDescription("Insert a single object with its vector embedding into a Weaviate collection. The object can include any properties that match the collection schema. Weaviate automatically generates vector embeddings for the object."),
+		mcp.WithTitleAnnotation("Weaviate: Insert Object"),
+		mcp.WithDestructiveHintAnnotation(true),
 		mcp.WithString(
 			"collection",
 			mcp.Description("Name of the target collection"),
@@ -54,6 +57,9 @@ func (s *MCPServer) registerTools() {
 	)
 	query := mcp.NewTool(
 		"weaviate-query",
+		mcp.WithDescription("Query a Weaviate collection using semantic or hybrid search. Returns matching objects with their properties and similarity scores. Uses Weaviate's vector search capabilities for semantic understanding."),
+		mcp.WithTitleAnnotation("Weaviate: Query"),
+		mcp.WithReadOnlyHintAnnotation(true),
 		mcp.WithString(
 			"query",
 			mcp.Description("Query data within Weaviate"),
