@@ -39,3 +39,8 @@ Retrieve objects from weaviate with hybrid search.
 ```json
 {}
 ```
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/weaviate-mcp-server-weaviate).
+
